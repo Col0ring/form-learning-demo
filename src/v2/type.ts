@@ -10,12 +10,12 @@ export interface FieldValue {
 
 export interface FormContextValue {
   setFields: (fields: FieldValue[]) => void
-  getFields: (paths?: Path[]) => FieldsValue[]
+  getFields: (paths?: Path[]) => FieldsValue
 }
 
 export interface FormAction {
   setFields: (fields: FieldValue[]) => void
-  getFields: (paths?: Path[]) => FieldsValue[]
+  getFields: (paths?: Path[]) => FieldsValue
 }
 
 export interface InternalFormAction extends FormAction {

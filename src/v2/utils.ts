@@ -6,7 +6,7 @@ export function getNamePath(val: Path): NamePath {
   return Array.isArray(val) ? val : [val]
 }
 
-export function getValue(store: Store, namePath: NamePath): any {
+export function getValue(store: Store, namePath: NamePath) {
   let value = store
   for (let i = 0; i < namePath.length; i++) {
     if (value === null || value === undefined) {
@@ -17,7 +17,7 @@ export function getValue(store: Store, namePath: NamePath): any {
   return value
 }
 
-export function setValue(store: Store, namePath: NamePath, value: any): Store {
+export function setValue(store: Store, namePath: NamePath, value: any) {
   if (!namePath.length) {
     return value
   }

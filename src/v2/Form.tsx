@@ -1,5 +1,4 @@
-import React, { useImperativeHandle, useMemo, useRef } from 'react'
-import { FieldValue } from '../v2'
+import React, { useImperativeHandle, useMemo } from 'react'
 import { FormContext } from './context'
 import { FormAction, FormContextValue, InternalFormAction, Store } from './type'
 import { useForm } from './useForm'
@@ -9,48 +8,39 @@ export interface FormProps {
   children: React.ReactNode
   initialValues?: Store
   form?: FormAction
-  onFieldsChange?: (options: {
-    changedFields: FieldValue[]
-    fieldsStore: Store
-  }) => void
 }
 
 export const Form: React.FC<FormProps> = ({
   children,
   initialValues,
-  onFieldsChange,
   form: formProp,
 }) => {
-  const [fieldsStore, setFieldsStore] = React.useState<Store>(
+  const [filesStore, setFilesStore] = React.useState<Store>(
     () => initialValues || {}
   )
-  const onFieldsChangeRef = useRef(onFieldsChange)
-  onFieldsChangeRef.current = onFieldsChange
   const defaultForm = useForm()
   const form = (formProp || defaultForm) as InternalFormAction
   const ctx: FormContextValue = useMemo(() => {
     return {
       setFields(fields) {
-        let newStore = fieldsStore
-        fields.forEach((field) => {
-          newStore = setValue(newStore, getNamePath(field.name), field.value)
-        })
-        setFieldsStore(newStore)
-        onFieldsChangeRef.current?.({
-          changedFields: fields,
-          fieldsStore: fieldsStore,
+        setFilesStore((store) => {
+          let newStore = store
+          fields.forEach((field) => {
+            newStore = setValue(store, getNamePath(field.name), field.value)
+          })
+          return newStore
         })
       },
       getFields(paths) {
         if (!paths) {
-          return [fieldsStore]
+          return filesStore
         }
         return paths.map((path) => {
-          return getValue(fieldsStore, getNamePath(path))
+          return getValue(filesStore, getNamePath(path))
         })
       },
     }
-  }, [fieldsStore])
+  }, [filesStore])
   useImperativeHandle(form.__INTERNAL__, () => ctx, [ctx])
   return <FormContext.Provider value={ctx}>{children}</FormContext.Provider>
 }
