@@ -21,12 +21,12 @@ const Child: React.FC<ChildProps> = ({ value, onChange }) => {
 const Parent: React.FC = () => {
   const [state, setState] = useState(() => ({
     input1: '',
-    input2: ''
+    input2: '',
   }))
   const onChange = (input: string, key: string) => {
     setState((prevState) => ({
       ...prevState,
-      [key]: input
+      [key]: input,
     }))
   }
 

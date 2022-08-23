@@ -3,18 +3,18 @@ export type NamePath = (string | number)[]
 export type Path = number | string | NamePath
 export type Store = Record<string, any>
 export type FieldsValue = Record<string, any>
-export interface FieldValue {
-  name: Path
+export interface FieldMeta {
+  name: NamePath
   value: any
 }
 
 export interface FormContextValue {
-  setFields: (fields: FieldValue[]) => void
+  setFields: (fields: FieldMeta[]) => void
   getFields: (paths?: Path[]) => FieldsValue
 }
 
 export interface FormAction {
-  setFields: (fields: FieldValue[]) => void
+  setFields: (fields: FieldMeta[]) => void
   getFields: (paths?: Path[]) => FieldsValue
 }
 

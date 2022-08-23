@@ -1,7 +1,18 @@
-import React, { useImperativeHandle, useMemo, useRef } from 'react'
-import { FieldValue } from '../v2'
+import React, {
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { FormContext } from './context'
-import { FormAction, FormContextValue, InternalFormAction, Store } from './type'
+import {
+  FieldMeta,
+  FormAction,
+  FormContextValue,
+  InternalFormAction,
+  Store,
+} from './type'
 import { useForm } from './useForm'
 import { getNamePath, getValue, setValue } from './utils'
 
@@ -10,7 +21,7 @@ export interface FormProps {
   initialValues?: Store
   form?: FormAction
   onFieldsChange?: (options: {
-    changedFields: FieldValue[]
+    changedFields: FieldMeta[]
     fieldsStore: Store
   }) => void
 }
@@ -24,22 +35,30 @@ export const Form: React.FC<FormProps> = ({
   const [fieldsStore, setFieldsStore] = React.useState<Store>(
     () => initialValues || {}
   )
+  const [changedFields, setChangedFields] = useState<FieldMeta[]>([])
   const onFieldsChangeRef = useRef(onFieldsChange)
   onFieldsChangeRef.current = onFieldsChange
   const defaultForm = useForm()
   const form = (formProp || defaultForm) as InternalFormAction
-  const ctx: FormContextValue = useMemo(() => {
+  const action: Omit<FormContextValue, 'changedFields'> = useMemo(() => {
     return {
-      setFields(fields) {
+      setFields(fields, external) {
         let newStore = fieldsStore
-        fields.forEach((field) => {
-          newStore = setValue(newStore, getNamePath(field.name), field.value)
-        })
+        !external &&
+          setChangedFields(
+            fields.map((field) => {
+              newStore = setValue(
+                newStore,
+                getNamePath(field.name),
+                field.value
+              )
+              return {
+                ...field,
+                name: getNamePath(field.name),
+              }
+            })
+          )
         setFieldsStore(newStore)
-        onFieldsChangeRef.current?.({
-          changedFields: fields,
-          fieldsStore: fieldsStore,
-        })
       },
       getFields(paths) {
         if (!paths) {
@@ -51,7 +70,27 @@ export const Form: React.FC<FormProps> = ({
       },
     }
   }, [fieldsStore])
-  useImperativeHandle(form.__INTERNAL__, () => ctx, [ctx])
+
+  const ctx: FormContextValue = useMemo(() => {
+    return {
+      ...action,
+      changedFields,
+    }
+  }, [action, changedFields])
+  useEffect(() => {
+    onFieldsChangeRef.current?.({
+      changedFields,
+      fieldsStore: fieldsStore,
+    })
+  }, [fieldsStore, changedFields])
+  useImperativeHandle(
+    form.__INTERNAL__,
+    () => ({
+      ...action,
+      setFields: (fields) => action.setFields(fields, true),
+    }),
+    [action]
+  )
   return <FormContext.Provider value={ctx}>{children}</FormContext.Provider>
 }
 
