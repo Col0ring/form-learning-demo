@@ -1,21 +1,29 @@
 import React from 'react'
+import { FormStore } from './store'
 export type NamePath = (string | number)[]
 export type Path = number | string | NamePath
 export type Store = Record<string, any>
-export type FieldsValue = Record<string, any>
 export interface FieldMeta {
-  name: NamePath
+  name: Path
   value: any
 }
 
+export type WatchCallback = (
+  changedFields: FieldMeta[],
+  external?: boolean
+) => void
+export type FiledCallback = (
+  changedFields: FieldMeta[],
+  external?: boolean
+) => void
+
 export interface FormContextValue {
-  setFields: (fields: FieldMeta[]) => void
-  getFields: (paths?: Path[]) => FieldsValue
+  formStore: FormStore
 }
 
 export interface FormAction {
   setFields: (fields: FieldMeta[]) => void
-  getFields: (paths?: Path[]) => FieldsValue
+  getFields: (paths?: Path[]) => any[]
 }
 
 export interface InternalFormAction extends FormAction {

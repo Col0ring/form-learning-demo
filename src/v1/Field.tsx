@@ -45,7 +45,14 @@ export const Field: React.FC<FieldProps> = ({
         )
       )
       if (filteredChangedFields.length && onDependenciesChange) {
-        onDependenciesChange(filteredChangedFields, value)
+        const res = onDependenciesChange(filteredChangedFields, value)
+        if (res instanceof Promise) {
+          res.then((v) => {
+            setFields([{ name, value: v }])
+          })
+        } else {
+          setFields([{ name, value: res }])
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

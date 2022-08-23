@@ -1,7 +1,7 @@
 import { useFormContext } from './context'
 import { Path } from './type'
 
-export function useWatch(paths?: Path[]) {
+export function useWatch(path?: Path) {
   const { getFields } = useFormContext()
-  return getFields(paths)
+  return path ? getFields([path])[0] : getFields()[0]
 }

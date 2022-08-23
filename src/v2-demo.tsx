@@ -1,5 +1,5 @@
 import React, { useState, memo } from 'react'
-import { Form, Field, Store, useWatch, useForm, IsPathEqual } from './v1'
+import { Form, Field, Store, useWatch, useForm, IsPathEqual } from './v2'
 
 export interface InputProps {
   value?: string
@@ -7,7 +7,7 @@ export interface InputProps {
 }
 
 const Input: React.FC<InputProps> = ({ value, onChange }) => {
-  // console.log(useWatch())
+  console.log(123)
   return (
     <input
       value={value}
@@ -18,38 +18,34 @@ const Input: React.FC<InputProps> = ({ value, onChange }) => {
   )
 }
 
-const MemoInput = memo(Input)
-
 const V1Demo: React.FC = () => {
   const form = useForm()
-  const [fields, setFields] = useState<Store>({
-    input1: 'input1',
-    nested: {
-      input1: 'nested-input1',
-    },
-  })
 
   return (
     <Form
       form={form}
-      initialValues={fields}
-      onFieldsChange={({ fieldsStore, changedFields }) => {
+      initialValues={{
+        input1: 'input1',
+        nested: {
+          input1: 'nested-input1',
+        },
+      }}
+      onFieldsChange={({ changedFields }) => {
         const input1Field = changedFields.find((changedField) =>
           IsPathEqual(changedField.name, ['input1'])
         )
         input1Field &&
           form.setFields([
             {
-              name: 'input2',
+              name: ['input2'],
               value: input1Field.value + '_input2',
             },
           ])
-        setFields(fieldsStore)
       }}
     >
       <div>
         <Field name="input1">
-          <MemoInput />
+          <Input />
         </Field>
       </div>
       <div>
@@ -57,7 +53,6 @@ const V1Demo: React.FC = () => {
           name="input2"
           dependencies={['input1']}
           onDependenciesChange={(changes, value) => {
-            console.log(changes)
             return value
           }}
         >

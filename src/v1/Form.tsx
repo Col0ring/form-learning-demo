@@ -44,20 +44,14 @@ export const Form: React.FC<FormProps> = ({
     return {
       setFields(fields, external) {
         let newStore = fieldsStore
-        !external &&
-          setChangedFields(
-            fields.map((field) => {
-              newStore = setValue(
-                newStore,
-                getNamePath(field.name),
-                field.value
-              )
-              return {
-                ...field,
-                name: getNamePath(field.name),
-              }
-            })
-          )
+        const newChangedFields = fields.map((field) => {
+          newStore = setValue(newStore, getNamePath(field.name), field.value)
+          return {
+            ...field,
+            name: getNamePath(field.name),
+          }
+        })
+        !external && setChangedFields(newChangedFields)
         setFieldsStore(newStore)
       },
       getFields(paths) {
@@ -82,7 +76,8 @@ export const Form: React.FC<FormProps> = ({
       changedFields,
       fieldsStore: fieldsStore,
     })
-  }, [fieldsStore, changedFields])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [changedFields])
   useImperativeHandle(
     form.__INTERNAL__,
     () => ({
