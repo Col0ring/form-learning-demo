@@ -1,5 +1,5 @@
 import React from 'react'
-import { Form, Field, useForm, IsPathEqual } from './v2'
+import { Form, Field, useForm, ControlledField, IsPathEqual } from './v3'
 
 export interface InputProps {
   value?: string
@@ -7,7 +7,6 @@ export interface InputProps {
 }
 
 const Input: React.FC<InputProps> = ({ value, onChange }) => {
-  console.log(123)
   return (
     <input
       value={value}
@@ -30,30 +29,18 @@ const V1Demo: React.FC = () => {
           input1: 'nested-input1',
         },
       }}
-      onFieldsChange={({ changedFields }) => {
-        const input1Field = changedFields.find((changedField) =>
-          IsPathEqual(changedField.name, ['input1'])
-        )
-        input1Field &&
-          form.setFields([
-            {
-              name: ['input2'],
-              value: input1Field.value + '_input2',
-            },
-          ])
-      }}
     >
       <div>
-        <Field name="input1">
+        <ControlledField name="input1">
           <Input />
-        </Field>
+        </ControlledField>
       </div>
       <div>
         <Field
           name="input2"
           dependencies={['input1']}
-          onDependenciesChange={(changes, value) => {
-            return value
+          onDependenciesChange={async (changes, value) => {
+            return changes[0].value + '111'
           }}
         >
           <input />

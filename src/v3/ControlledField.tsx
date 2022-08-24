@@ -4,14 +4,14 @@ import { FieldMeta, Path } from './type'
 import { useWatch } from './useWatch'
 import { getNamePath, getTargetValue, IsPathEqual } from './utils'
 
-export interface FieldProps {
+export interface ControlledFieldProps {
   children: React.ReactNode
   name: Path
   dependencies?: Path[]
   onDependenciesChange?: (fields: FieldMeta[], value: any) => Promise<any> | any
 }
 
-export const Field: React.FC<FieldProps> = ({
+export const ControlledField: React.FC<ControlledFieldProps> = ({
   children,
   name,
   dependencies,
@@ -70,4 +70,4 @@ export const Field: React.FC<FieldProps> = ({
   return <>{element}</>
 }
 
-export default Field
+export default ControlledField

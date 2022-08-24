@@ -1,6 +1,7 @@
 import EasyDemo from './easy-demo'
 import V1Demo from './v1-demo'
 import V2Demo from './v2-demo'
+import V3Demo from './v3-demo'
 
 function App() {
   return (
@@ -11,6 +12,8 @@ function App() {
       <V1Demo />
       <h2>v2</h2>
       <V2Demo />
+      <h2>v3</h2>
+      <V3Demo />
     </>
   )
 }

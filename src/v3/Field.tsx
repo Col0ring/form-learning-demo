@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useFormContext } from './context'
-import { FieldMeta, Path } from './type'
-import { useWatch } from './useWatch'
+import { FieldElement, FieldMeta, Path } from './type'
 import { getNamePath, getTargetValue, IsPathEqual } from './utils'
 
 export interface FieldProps {
@@ -18,9 +17,7 @@ export const Field: React.FC<FieldProps> = ({
   onDependenciesChange,
 }) => {
   const { formStore } = useFormContext()
-  const value = useWatch(name)
-  const valueRef = useRef(value)
-  valueRef.current = value
+  const fieldRef = useRef<FieldElement>()
   const onChange = useCallback(
     (e: any) => {
       formStore.setFields([
@@ -37,13 +34,25 @@ export const Field: React.FC<FieldProps> = ({
     }
     return React.cloneElement(children as React.ReactElement, {
       onChange: onChangeRef.current,
-      value,
+      ref: fieldRef,
       ...children.props,
     })
-  }, [children, value])
-
+  }, [children])
+  console.log(111)
   useEffect(() => {
-    const unsubscribe = formStore.subscribe((changedFields) => {
+    const unsubscribe = formStore.subscribe((changedFields, external) => {
+      if (!fieldRef.current) {
+        return
+      }
+      if (external) {
+        const currentField = changedFields.find((field) =>
+          IsPathEqual(getNamePath(name), getNamePath(field.name))
+        )
+        if (currentField) {
+          fieldRef.current.value = currentField.value
+        }
+      }
+
       if (dependencies) {
         const filteredChangedFields = changedFields.filter((field) =>
           dependencies.find((path) =>
@@ -53,14 +62,18 @@ export const Field: React.FC<FieldProps> = ({
         if (filteredChangedFields.length && onDependenciesChange) {
           const res = onDependenciesChange(
             filteredChangedFields,
-            valueRef.current
+            fieldRef.current.value
           )
           if (res instanceof Promise) {
             res.then((v) => {
               formStore.setFields([{ name, value: v }])
+              if (fieldRef.current) {
+                fieldRef.current.value = v
+              }
             })
           } else {
             formStore.setFields([{ name, value: res }])
+            fieldRef.current.value = res
           }
         }
       }

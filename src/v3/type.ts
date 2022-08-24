@@ -8,6 +8,11 @@ export interface FieldMeta {
   value: any
 }
 
+export type FieldElement =
+  | HTMLInputElement
+  | HTMLSelectElement
+  | HTMLTextAreaElement
+
 export type SubscribeCallback = (
   changedFields: FieldMeta[],
   external?: boolean
