@@ -28,17 +28,20 @@ export const Field: React.FC<FieldProps> = ({
   )
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
+  const elementOnChange = useCallback((e: any) => {
+    return onChangeRef.current(e)
+  }, [])
   const element = useMemo(() => {
     if (!React.isValidElement(children)) {
       return null
     }
     return React.cloneElement(children as React.ReactElement, {
-      onChange: onChangeRef.current,
+      onChange: elementOnChange,
       ref: fieldRef,
       ...children.props,
     })
-  }, [children])
-  console.log(111)
+  }, [children, elementOnChange])
+
   useEffect(() => {
     const unsubscribe = formStore.subscribe((changedFields, external) => {
       if (!fieldRef.current) {

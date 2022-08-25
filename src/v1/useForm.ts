@@ -11,7 +11,7 @@ export function useForm(): FormAction {
   const __INTERNAL__ = useRef<FormAction | null>(null)
   return {
     __INTERNAL__,
-    getFields(paths?) {
+    getFields(paths) {
       const action = __INTERNAL__.current
       if (!action) {
         throwError()
