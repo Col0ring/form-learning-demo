@@ -15,11 +15,61 @@ export interface FieldMeta {
   value: any
 }
 
+export type SubscribeCallback = (changedFields: FieldMeta[]) => void
+
+export class FormStore {
+  private store: Store = {}
+  private observers: SubscribeCallback[] = []
+
+  constructor(initialValues?: Store) {
+    initialValues && this.updateStore(initialValues)
+  }
+
+  private updateStore(nextStore: Store) {
+    this.store = nextStore
+  }
+
+  private notify(changedFiles: FieldMeta[]) {
+    this.observers.forEach((callback) => {
+      callback(changedFiles)
+    })
+  }
+
+  subscribe(callback: SubscribeCallback) {
+    this.observers.push(callback)
+    return () => {
+      this.observers = this.observers.filter((fn) => fn !== callback)
+    }
+  }
+
+  getFields(names?: string[]): any[] {
+    if (!names) {
+      return [this.store]
+    }
+    return names.map((name) => {
+      return this.store[name]
+    })
+  }
+
+  setFields(fields: FieldMeta[]) {
+    const newStore = {
+      ...this.store,
+      ...fields.reduce((acc, next) => {
+        acc[next.name] = next.value
+        return acc
+      }, {} as Store),
+    }
+    this.updateStore(newStore)
+    this.notify(fields)
+  }
+}
+
 export interface FormContextValue {
-  // Context 内保存的每一个表单项
-  fieldsStore: Store
-  // Context 内下发如何修改表单项值的方法
-  setFields: (fields: FieldMeta[]) => void
+  // // Context 内保存的每一个表单项
+  // fieldsStore: Store
+  // // Context 内下发如何修改表单项值的方法
+  // setFields: (fields: FieldMeta[]) => void
+  formStore: FormStore
 }
 
 export const FormContext = React.createContext<FormContextValue | null>(null)
@@ -52,50 +102,41 @@ export const Form: React.FC<FormProps> = ({
   form: formProp,
   children,
 }) => {
-  const [fieldsStore, setFieldsStore] = useState<Store>(
-    () => initialValues || {}
-  )
   const onFieldsChangeRef = useRef(onFieldsChange)
   onFieldsChangeRef.current = onFieldsChange
   const defaultForm = useForm()
   const form = (formProp || defaultForm) as InternalFormAction
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const formStore = useMemo(() => new FormStore(initialValues), [])
 
   const ctx: FormContextValue = useMemo(() => {
     return {
-      fieldsStore,
-      // 修改表单项值
-      setFields(fields) {
-        const newStore = {
-          ...fieldsStore,
-          ...fields.reduce((acc, next) => {
-            acc[next.name] = next.value
-            return acc
-          }, {} as Store),
-        }
-        setFieldsStore(newStore)
-        onFieldsChangeRef.current?.({
-          changedFields: fields,
-          fieldsStore: newStore,
-        })
-      },
+      formStore,
     }
-  }, [fieldsStore])
+  }, [formStore])
 
   useImperativeHandle(
     form.__INTERNAL__,
     () => ({
-      getFields(names) {
-        if (!names) {
-          return [ctx.fieldsStore]
-        }
-        return names.map((name) => {
-          return ctx.fieldsStore[name]
-        })
+      setFields(fields) {
+        formStore.setFields(fields)
       },
-      setFields: ctx.setFields,
+      getFields(paths) {
+        return formStore.getFields(paths)
+      },
     }),
-    [ctx.fieldsStore, ctx.setFields]
+    [formStore]
   )
+
+  useEffect(() => {
+    const unsubscribe = formStore.subscribe((changedFields) => {
+      onFieldsChangeRef.current?.({
+        changedFields,
+        fieldsStore: formStore.getFields(),
+      })
+    })
+    return unsubscribe
+  }, [formStore])
   return <FormContext.Provider value={ctx}>{children}</FormContext.Provider>
 }
 
@@ -150,13 +191,13 @@ export function getTargetValue(e: any) {
 }
 
 export const Field: React.FC<FieldProps> = ({ children, name }) => {
-  const { setFields, fieldsStore } = useFormContext()
-  const value = fieldsStore[name]
+  const { formStore } = useFormContext()
+  const [value, setValue] = useState(() => formStore.getFields([name])[0])
   const onChange = useCallback(
     (e: any) => {
-      setFields([{ name, value: getTargetValue(e) }])
+      formStore.setFields([{ name, value: getTargetValue(e) }])
     },
-    [name, setFields]
+    [formStore, name]
   )
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
@@ -173,11 +214,37 @@ export const Field: React.FC<FieldProps> = ({ children, name }) => {
       ...children.props,
     })
   }, [children, elementOnChange, value])
-
+  useEffect(() => {
+    const unsubscribe = formStore.subscribe((changedFields) => {
+      const targetField = changedFields.find(
+        (changedField) => name === changedField.name
+      )
+      targetField && setValue(targetField.value)
+    })
+    return unsubscribe
+  }, [formStore, name])
   return <>{element}</>
 }
 
 export function useWatch(name?: string) {
-  const { fieldsStore } = useFormContext()
-  return name ? fieldsStore[name] : fieldsStore
+  const { formStore } = useFormContext()
+  const [value, setValue] = useState(() =>
+    name ? formStore.getFields([name])[0] : formStore.getFields()[0]
+  )
+  useEffect(() => {
+    const unsubscribe = formStore.subscribe((changedFields) => {
+      if (name) {
+        const targetField = changedFields.find(
+          (changedField) => name === changedField.name
+        )
+        targetField && setValue(targetField.value)
+      }
+      {
+        setValue(formStore.getFields()[0])
+      }
+    })
+    return unsubscribe
+  }, [formStore, name])
+
+  return value
 }
