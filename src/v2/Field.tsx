@@ -36,7 +36,7 @@ export const Field: React.FC<FieldProps> = ({
   }, [])
   const element = useMemo(() => {
     if (!React.isValidElement(children)) {
-      return null
+      return children
     }
     return React.cloneElement(children as React.ReactElement, {
       onChange: elementOnChange,
