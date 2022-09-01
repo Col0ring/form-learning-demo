@@ -1,5 +1,5 @@
 import React, { useState, memo } from 'react'
-import { Form, Field, Store, useWatch, useForm, IsPathEqual } from './v1'
+import { Form, Field, Store, useForm, IsPathEqual } from './v1'
 
 export interface InputProps {
   value?: string
