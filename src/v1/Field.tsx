@@ -1,31 +1,31 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useCallback, useMemo, useRef } from 'react'
 import { useFormContext } from './context'
-import { FieldMeta, Path } from './type'
-import { getNamePath, getTargetValue, IsPathEqual } from './utils'
 
 export interface FieldProps {
   children: React.ReactNode
-  name: Path
-  dependencies?: Path[]
-  onDependenciesChange?: (fields: FieldMeta[], value: any) => Promise<any> | any
+  name: string
 }
 
-export const Field: React.FC<FieldProps> = ({
-  children,
-  name,
-  dependencies,
-  onDependenciesChange,
-}) => {
-  const { setFields, getFields, changedFields } = useFormContext()
-  const value = useMemo(() => getFields([name])[0], [getFields, name])
+export function getTargetValue(e: any) {
+  if (typeof e === 'object' && e !== null && 'target' in e) {
+    return e.target.value
+  }
+  return e
+}
+
+export const Field: React.FC<FieldProps> = ({ children, name }) => {
+  const { setFields, fieldsStore } = useFormContext()
+  // 实现 value 与 onChange
+  const value = fieldsStore[name]
   const onChange = useCallback(
     (e: any) => {
-      setFields([{ name: getNamePath(name), value: getTargetValue(e) }])
+      setFields([{ name, value: getTargetValue(e) }])
     },
     [name, setFields]
   )
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
+  // 为了确保 onChange 不会改变地址指向
   const elementOnChange = useCallback((e: any) => {
     return onChangeRef.current(e)
   }, [])
@@ -33,34 +33,13 @@ export const Field: React.FC<FieldProps> = ({
     if (!React.isValidElement(children)) {
       return children
     }
+    // 克隆 children，传入 value 与 onChange
     return React.cloneElement(children as React.ReactElement, {
       onChange: elementOnChange,
       value,
       ...children.props,
     })
-  }, [children, elementOnChange, value])
+  }, [children, value, elementOnChange])
 
-  useEffect(() => {
-    if (dependencies) {
-      const filteredChangedFields = changedFields.filter((field) =>
-        dependencies.find((path) =>
-          IsPathEqual(getNamePath(path), getNamePath(field.name))
-        )
-      )
-      if (filteredChangedFields.length && onDependenciesChange) {
-        const res = onDependenciesChange(filteredChangedFields, value)
-        if (res instanceof Promise) {
-          res.then((v) => {
-            setFields([{ name, value: v }])
-          })
-        } else {
-          setFields([{ name, value: res }])
-        }
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [changedFields])
   return <>{element}</>
 }
-
-export default Field

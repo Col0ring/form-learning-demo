@@ -1,5 +1,5 @@
 import React from 'react'
-import { Form, Field, useForm, ControlledField, IsPathEqual } from './v3'
+import { Form, Field, useForm, NativeField, useWatch } from './v3'
 
 export interface InputProps {
   value?: string
@@ -7,6 +7,9 @@ export interface InputProps {
 }
 
 const Input: React.FC<InputProps> = ({ value, onChange }) => {
+  console.log('v3 input changed')
+  const input3 = useWatch('input3')
+  console.log(input3)
   return (
     <input
       value={value}
@@ -17,7 +20,7 @@ const Input: React.FC<InputProps> = ({ value, onChange }) => {
   )
 }
 
-const V1Demo: React.FC = () => {
+const V3Demo: React.FC = () => {
   const form = useForm()
 
   return (
@@ -25,41 +28,33 @@ const V1Demo: React.FC = () => {
       form={form}
       initialValues={{
         input1: 'input1',
-        nested: {
-          input1: 'nested-input1',
-        },
+        input2: 'input2',
+        input3: 'input3',
       }}
     >
       <div>
-        <ControlledField name="input1">
+        <Field name="input1">
           <Input />
-        </ControlledField>
-      </div>
-      <div>
-        <Field
-          name="input2"
-          dependencies={['input1']}
-          onDependenciesChange={async (changes, value) => {
-            return changes[0].value + '111'
-          }}
-        >
-          <input />
         </Field>
       </div>
       <div>
-        <Field name={['nested', 'input1']}>
+        <NativeField name="input2">
           <input />
-        </Field>
+        </NativeField>
       </div>
       <div>
-        <Field name={['nested', 'input2']}>
+        <NativeField name="input3">
           <input />
-        </Field>
+        </NativeField>
       </div>
       <div>
         <button
           onClick={() =>
-            console.log(form.getFields([['nested'], ['nested', 'input2']]))
+            console.log(
+              'v3',
+              form.getFields(['input1', 'input2']),
+              form.getFields()
+            )
           }
         >
           get fields value
@@ -69,4 +64,4 @@ const V1Demo: React.FC = () => {
   )
 }
 
-export default V1Demo
+export default V3Demo

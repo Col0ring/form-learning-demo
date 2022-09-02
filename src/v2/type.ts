@@ -1,27 +1,29 @@
-import React from 'react'
 import { FormStore } from './store'
-export type NamePath = (string | number)[]
-export type Path = number | string | NamePath
+
 export type Store = Record<string, any>
+
 export interface FieldMeta {
-  name: Path
+  name: string
   value: any
 }
 
-export type SubscribeCallback = (
-  changedFields: FieldMeta[],
-  external?: boolean
-) => void
-
 export interface FormContextValue {
+  // // Context 内保存的每一个表单项
+  // fieldsStore: Store
+  // // Context 内下发如何修改表单项值的方法
+  // setFields: (fields: FieldMeta[]) => void
   formStore: FormStore
 }
 
+// 对外暴露的值
 export interface FormAction {
+  // 修改字段值
   setFields: (fields: FieldMeta[]) => void
-  getFields: (paths?: Path[]) => any[]
+  // 获取字段值
+  getFields: (names?: string[]) => any[]
 }
-
+// 对内使用的值
 export interface InternalFormAction extends FormAction {
   __INTERNAL__: React.MutableRefObject<FormAction | null>
 }
+export type SubscribeCallback = (changedFields: FieldMeta[]) => void

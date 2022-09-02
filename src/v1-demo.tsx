@@ -1,5 +1,5 @@
 import React, { useState, memo } from 'react'
-import { Form, Field, Store, useForm, IsPathEqual } from './v1'
+import { Form, Field, Store, useForm, useWatch } from './v1'
 
 export interface InputProps {
   value?: string
@@ -7,7 +7,9 @@ export interface InputProps {
 }
 
 const Input: React.FC<InputProps> = ({ value, onChange }) => {
-  // console.log(useWatch())
+  console.log('v1 input changed')
+  const input3 = useWatch('input3')
+  console.log(input3)
   return (
     <input
       value={value}
@@ -24,9 +26,8 @@ const V1Demo: React.FC = () => {
   const form = useForm()
   const [fields, setFields] = useState<Store>({
     input1: 'input1',
-    nested: {
-      input1: 'nested-input1',
-    },
+    input2: 'input2',
+    input3: 'input3',
   })
 
   return (
@@ -34,8 +35,8 @@ const V1Demo: React.FC = () => {
       form={form}
       initialValues={fields}
       onFieldsChange={({ fieldsStore, changedFields }) => {
-        const input1Field = changedFields.find((changedField) =>
-          IsPathEqual(changedField.name, ['input1'])
+        const input1Field = changedFields.find(
+          (changedField) => changedField.name === 'input1'
         )
         input1Field &&
           form.setFields([
@@ -51,33 +52,28 @@ const V1Demo: React.FC = () => {
         <Field name="input1">
           <MemoInput />
         </Field>
+        {/* <Field name="input1">
+          <Input />
+        </Field> */}
       </div>
       <div>
-        <Field
-          name="input2"
-          dependencies={['input1']}
-          onDependenciesChange={(changes, value) => {
-            console.log(changes)
-            return value
-          }}
-        >
+        <Field name="input2">
           <input />
         </Field>
       </div>
       <div>
-        <Field name={['nested', 'input1']}>
-          <input />
-        </Field>
-      </div>
-      <div>
-        <Field name={['nested', 'input2']}>
+        <Field name="input3">
           <input />
         </Field>
       </div>
       <div>
         <button
           onClick={() =>
-            console.log(form.getFields([['nested'], ['nested', 'input2']]))
+            console.log(
+              'v1',
+              form.getFields(['input1', 'input2']),
+              form.getFields()
+            )
           }
         >
           get fields value

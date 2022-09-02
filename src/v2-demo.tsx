@@ -1,5 +1,5 @@
 import React from 'react'
-import { Form, Field, useForm, IsPathEqual } from './v2'
+import { Form, Field, useForm, useWatch } from './v2'
 
 export interface InputProps {
   value?: string
@@ -7,7 +7,9 @@ export interface InputProps {
 }
 
 const Input: React.FC<InputProps> = ({ value, onChange }) => {
-  console.log(123)
+  console.log('v2 input changed')
+  const input3 = useWatch('input3')
+  console.log(input3)
   return (
     <input
       value={value}
@@ -18,7 +20,7 @@ const Input: React.FC<InputProps> = ({ value, onChange }) => {
   )
 }
 
-const V1Demo: React.FC = () => {
+const V2Demo: React.FC = () => {
   const form = useForm()
 
   return (
@@ -26,21 +28,8 @@ const V1Demo: React.FC = () => {
       form={form}
       initialValues={{
         input1: 'input1',
-        nested: {
-          input1: 'nested-input1',
-        },
-      }}
-      onFieldsChange={({ changedFields }) => {
-        const input1Field = changedFields.find((changedField) =>
-          IsPathEqual(changedField.name, ['input1'])
-        )
-        input1Field &&
-          form.setFields([
-            {
-              name: ['input2'],
-              value: input1Field.value + '_input2',
-            },
-          ])
+        input2: 'input2',
+        input3: 'input3',
       }}
     >
       <div>
@@ -49,30 +38,23 @@ const V1Demo: React.FC = () => {
         </Field>
       </div>
       <div>
-        <Field
-          name="input2"
-          dependencies={['input1']}
-          onDependenciesChange={(changes, value) => {
-            return value
-          }}
-        >
+        <Field name="input2">
           <input />
         </Field>
       </div>
       <div>
-        <Field name={['nested', 'input1']}>
-          <input />
-        </Field>
-      </div>
-      <div>
-        <Field name={['nested', 'input2']}>
+        <Field name="input3">
           <input />
         </Field>
       </div>
       <div>
         <button
           onClick={() =>
-            console.log(form.getFields([['nested'], ['nested', 'input2']]))
+            console.log(
+              'v2',
+              form.getFields(['input1', 'input2']),
+              form.getFields()
+            )
           }
         >
           get fields value
@@ -82,4 +64,4 @@ const V1Demo: React.FC = () => {
   )
 }
 
-export default V1Demo
+export default V2Demo

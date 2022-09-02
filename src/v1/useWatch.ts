@@ -1,7 +1,7 @@
 import { useFormContext } from './context'
-import { Path } from './type'
 
-export function useWatch(path?: Path) {
-  const { getFields } = useFormContext()
-  return path ? getFields([path])[0] : getFields()[0]
+// 当传入 name 时返回具体的字段值，不传则返回整个 fieldsStore
+export function useWatch(name?: string) {
+  const { fieldsStore } = useFormContext()
+  return name ? fieldsStore[name] : fieldsStore
 }

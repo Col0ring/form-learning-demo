@@ -1,4 +1,4 @@
-import React, {
+import {
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -6,87 +6,86 @@ import React, {
   useState,
 } from 'react'
 import { FormContext } from './context'
+import { useForm } from './useForm'
 import {
   FieldMeta,
   FormAction,
   FormContextValue,
-  InternalFormAction,
   Store,
+  InternalFormAction,
 } from './type'
-import { useForm } from './useForm'
-import { getNamePath, getValue, setValue } from './utils'
 
 export interface FormProps {
-  children: React.ReactNode
+  // 注意这里我们可以传入默认值，也只允许传入默认值
   initialValues?: Store
-  form?: FormAction
+  // 表单项改变的方法
   onFieldsChange?: (options: {
+    // 改变的表单项
     changedFields: FieldMeta[]
     fieldsStore: Store
   }) => void
+  children?: React.ReactNode
+  // 增加一个 form 属性
+  form?: FormAction
 }
 
 export const Form: React.FC<FormProps> = ({
-  children,
   initialValues,
   onFieldsChange,
+  children,
   form: formProp,
 }) => {
-  const [fieldsStore, setFieldsStore] = React.useState<Store>(
+  const [fieldsStore, setFieldsStore] = useState<Store>(
     () => initialValues || {}
   )
   const [changedFields, setChangedFields] = useState<FieldMeta[]>([])
-  const onFieldsChangeRef = useRef(onFieldsChange)
-  onFieldsChangeRef.current = onFieldsChange
+  // 增加默认参数，避免后续使用报错
   const defaultForm = useForm()
   const form = (formProp || defaultForm) as InternalFormAction
-  const action: Omit<FormContextValue, 'changedFields'> = useMemo(() => {
+  const onFieldsChangeRef = useRef(onFieldsChange)
+  onFieldsChangeRef.current = onFieldsChange
+
+  const ctx: FormContextValue = useMemo(() => {
     return {
-      setFields(fields, external) {
-        let newStore = fieldsStore
-        const newChangedFields = fields.map((field) => {
-          newStore = setValue(newStore, getNamePath(field.name), field.value)
-          return {
-            ...field,
-            name: getNamePath(field.name),
-          }
-        })
-        !external && setChangedFields(newChangedFields)
-        setFieldsStore(newStore)
-      },
-      getFields(paths) {
-        if (!paths) {
-          return [fieldsStore]
+      fieldsStore,
+      // 修改表单项值
+      setFields(fields) {
+        const newStore = {
+          ...fieldsStore,
+          ...fields.reduce((acc, next) => {
+            acc[next.name] = next.value
+            return acc
+          }, {} as Store),
         }
-        return paths.map((path) => {
-          return getValue(fieldsStore, getNamePath(path))
-        })
+        setFieldsStore(newStore)
+        setChangedFields(fields)
       },
     }
   }, [fieldsStore])
 
-  const ctx: FormContextValue = useMemo(() => {
-    return {
-      ...action,
-      changedFields,
-    }
-  }, [action, changedFields])
-  useEffect(() => {
-    onFieldsChangeRef.current?.({
-      changedFields,
-      fieldsStore: fieldsStore,
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [changedFields])
   useImperativeHandle(
     form.__INTERNAL__,
     () => ({
-      ...action,
-      setFields: (fields) => action.setFields(fields, true),
+      getFields(names) {
+        if (!names) {
+          return [ctx.fieldsStore]
+        }
+        return names.map((name) => {
+          return ctx.fieldsStore[name]
+        })
+      },
+      setFields: ctx.setFields,
     }),
-    [action]
+    // 这里会依赖之前定义好的 ctx 上的值
+    [ctx.fieldsStore, ctx.setFields]
   )
+
+  // 这里要在 useEffect 也就是刷新 state 后再调用，否则如果在 onFieldsChangeRef 修改值会覆盖掉上次修改
+  useEffect(() => {
+    onFieldsChangeRef.current?.({
+      changedFields,
+      fieldsStore,
+    })
+  }, [fieldsStore, changedFields])
   return <FormContext.Provider value={ctx}>{children}</FormContext.Provider>
 }
-
-export default Form

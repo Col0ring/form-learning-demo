@@ -1,8 +1,9 @@
-import { createContext, useContext } from 'react'
+import React, { useContext } from 'react'
 import { FormContextValue } from './type'
 
-export const FormContext = createContext<FormContextValue | null>(null)
+export const FormContext = React.createContext<FormContextValue | null>(null)
 
+// 使用 Context
 export function useFormContext() {
   const ctx = useContext(FormContext)
   if (!ctx) {

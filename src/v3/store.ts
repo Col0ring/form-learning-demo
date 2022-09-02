@@ -1,8 +1,9 @@
-import { FieldMeta, Path, Store, SubscribeCallback } from './type'
-import { getNamePath, getValue, setValue } from './utils'
+import { FieldMeta, Store, SubscribeCallback } from './type'
 
 export class FormStore {
+  // 保存所有表单项的值
   private store: Store = {}
+  // 监听器数组
   private observers: SubscribeCallback[] = []
 
   constructor(initialValues?: Store) {
@@ -12,36 +13,38 @@ export class FormStore {
   private updateStore(nextStore: Store) {
     this.store = nextStore
   }
-
-  private notify(changedFiles: FieldMeta[], external?: boolean) {
+  // 当有值改变时，给所有监听器发布通知
+  private notify(changedFiles: FieldMeta[]) {
     this.observers.forEach((callback) => {
-      callback(changedFiles, external)
+      callback(changedFiles)
     })
   }
-
+  // 注册监听器
   subscribe(callback: SubscribeCallback) {
     this.observers.push(callback)
-
     return () => {
       this.observers = this.observers.filter((fn) => fn !== callback)
     }
   }
-
-  getFields(paths?: Path[]): any[] {
-    if (!paths) {
+  getFields(names?: string[]): any[] {
+    if (!names) {
       return [this.store]
     }
-    return paths.map((path) => {
-      return getValue(this.store, getNamePath(path))
+    return names.map((name) => {
+      return this.store[name]
     })
   }
 
-  setFields(fields: FieldMeta[], external?: boolean) {
-    fields.forEach((field) => {
-      this.updateStore(
-        setValue(this.store, getNamePath(field.name), field.value)
-      )
-    })
-    this.notify(fields, external)
+  setFields(fields: FieldMeta[]) {
+    const newStore = {
+      ...this.store,
+      ...fields.reduce((acc, next) => {
+        acc[next.name] = next.value
+        return acc
+      }, {} as Store),
+    }
+    this.updateStore(newStore)
+    // 当 store 更新时发送通知
+    this.notify(fields)
   }
 }

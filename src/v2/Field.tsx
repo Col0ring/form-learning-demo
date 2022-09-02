@@ -1,31 +1,24 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFormContext } from './context'
-import { FieldMeta, Path } from './type'
-import { useWatch } from './useWatch'
-import { getNamePath, getTargetValue, IsPathEqual } from './utils'
 
 export interface FieldProps {
   children: React.ReactNode
-  name: Path
-  dependencies?: Path[]
-  onDependenciesChange?: (fields: FieldMeta[], value: any) => Promise<any> | any
+  name: string
 }
 
-export const Field: React.FC<FieldProps> = ({
-  children,
-  name,
-  dependencies,
-  onDependenciesChange,
-}) => {
+export function getTargetValue(e: any) {
+  if (typeof e === 'object' && e !== null && 'target' in e) {
+    return e.target.value
+  }
+  return e
+}
+export const Field: React.FC<FieldProps> = ({ children, name }) => {
   const { formStore } = useFormContext()
-  const value = useWatch(name)
-  const valueRef = useRef(value)
-  valueRef.current = value
+  // 内部自己维护状态
+  const [value, setValue] = useState(() => formStore.getFields([name])[0])
   const onChange = useCallback(
     (e: any) => {
-      formStore.setFields([
-        { name: getNamePath(name), value: getTargetValue(e) },
-      ])
+      formStore.setFields([{ name, value: getTargetValue(e) }])
     },
     [formStore, name]
   )
@@ -45,32 +38,15 @@ export const Field: React.FC<FieldProps> = ({
     })
   }, [children, elementOnChange, value])
 
+  // 订阅一个监听，当 changedFields 中包含当前的字段时更新 value 值
   useEffect(() => {
     const unsubscribe = formStore.subscribe((changedFields) => {
-      if (dependencies) {
-        const filteredChangedFields = changedFields.filter((field) =>
-          dependencies.find((path) =>
-            IsPathEqual(getNamePath(path), getNamePath(field.name))
-          )
-        )
-        if (filteredChangedFields.length && onDependenciesChange) {
-          const res = onDependenciesChange(
-            filteredChangedFields,
-            valueRef.current
-          )
-          if (res instanceof Promise) {
-            res.then((v) => {
-              formStore.setFields([{ name, value: v }])
-            })
-          } else {
-            formStore.setFields([{ name, value: res }])
-          }
-        }
-      }
+      const targetField = changedFields.find(
+        (changedField) => name === changedField.name
+      )
+      targetField && setValue(targetField.value)
     })
     return unsubscribe
-  }, [dependencies, formStore, name, onDependenciesChange])
+  }, [formStore, name])
   return <>{element}</>
 }
-
-export default Field

@@ -1,26 +1,26 @@
 import { useEffect, useState } from 'react'
-import { IsPathEqual } from '../v1'
 import { useFormContext } from './context'
-import { Path } from './type'
-import { getNamePath } from './utils'
 
-export function useWatch(path?: Path) {
+// 其实内部的订阅逻辑和 Field 是类似的
+export function useWatch(name?: string) {
   const { formStore } = useFormContext()
-  const [state, setState] = useState(() =>
-    path ? formStore.getFields([path])[0] : formStore.getFields()[0]
+  // 内部维护一个状态值，当监听到指定字段值改变时，会更新当前调用 useWatch 的组件
+  const [value, setValue] = useState(() =>
+    name ? formStore.getFields([name])[0] : formStore.getFields()[0]
   )
   useEffect(() => {
     const unsubscribe = formStore.subscribe((changedFields) => {
-      if (path) {
-        const targetField = changedFields.find((changedField) =>
-          IsPathEqual(getNamePath(path), getNamePath(changedField.name))
+      if (name) {
+        const targetField = changedFields.find(
+          (changedField) => name === changedField.name
         )
-        targetField && setState(targetField.value)
+        targetField && setValue(targetField.value)
       } else {
-        setState(formStore.getFields()[0])
+        setValue(formStore.getFields()[0])
       }
     })
     return unsubscribe
-  }, [formStore, path])
-  return state
+  }, [formStore, name])
+
+  return value
 }

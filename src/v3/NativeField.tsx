@@ -31,12 +31,16 @@ export const NativeField: React.FC<FieldProps> = ({ children, name }) => {
     }
     return React.cloneElement(children as React.ReactElement, {
       onChange: elementOnChange,
+      ref: fieldRef,
       ...children.props,
     })
   }, [children, elementOnChange])
 
   // 订阅一个监听，当 changedFields 中包含当前的字段时更新 value 值
   useEffect(() => {
+    if (fieldRef.current) {
+      fieldRef.current.value = formStore.getFields([name])[0]
+    }
     const unsubscribe = formStore.subscribe((changedFields) => {
       if (!fieldRef.current) {
         return

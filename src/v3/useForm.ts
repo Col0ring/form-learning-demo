@@ -8,15 +8,17 @@ function throwError(): never {
 }
 
 export function useForm(): FormAction {
+  // 在容器内部需要绑定的值，不将其暴露给用户
   const __INTERNAL__ = useRef<FormAction | null>(null)
   return {
     __INTERNAL__,
-    getFields(paths?) {
+    // 额外封装一层方法调用
+    getFields(names) {
       const action = __INTERNAL__.current
       if (!action) {
         throwError()
       }
-      return action.getFields(paths)
+      return action.getFields(names)
     },
     setFields(fields) {
       const action = __INTERNAL__.current
